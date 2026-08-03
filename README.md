@@ -1,1 +1,1 @@
-A Visual Object Tracker with Historical Contextual Features
+A Visual Object Tracker with Historical Prompts from Joint Visual and Contextual Features
