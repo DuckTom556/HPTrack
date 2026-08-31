@@ -6,9 +6,9 @@ from lib.test.analysis.plot_results import plot_results, print_results, print_pe
 from lib.test.evaluation import get_dataset, trackerlist
 
 trackers = []
-dataset_name = 'lasot_extension_subset' # choosen from 'uav', 'nfs', 'lasot_extension_subset', 'lasot', 'lasot_lang', 'otb99_lang', 'tnl2k'
+dataset_name = 'lasot' # choosen from 'uav', 'nfs', 'lasot_extension_subset', 'lasot', 'lasot_lang', 'otb99_lang', 'tnl2k'
 
-trackers.extend(trackerlist(name='hptrack', parameter_name='hptrack_b224', dataset_name=dataset_name,
+trackers.extend(trackerlist(name='hptrack', parameter_name='hptrack_b256', dataset_name=dataset_name,
                             run_ids=None, display_name='hptrack'))
 
 dataset = get_dataset(dataset_name)

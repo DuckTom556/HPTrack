@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument(
         '--config',
         type=str,
-        default='hptrack_b224_got'
+        default='hptrack_b256'
     )
 
     return parser.parse_args()
