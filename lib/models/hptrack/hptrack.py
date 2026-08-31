@@ -27,18 +27,18 @@ class HPTrack(nn.Module):
         self.num_template = cfg.DATA.TEMPLATE.NUMBER
         self.his_len=None
     def forward(self, template_list=None, search_list=None,anno_list=None,back_out=None,
-                his_search=None,his_hp=None,mode="backbone"):
+                his_chp_tokens=None,mode="backbone"):
         if mode == "backbone":
-            return self.forward_backbone(template_list, search_list,anno_list,his_search,his_hp)
+            return self.forward_backbone(template_list, search_list,anno_list,his_chp_tokens)
         elif mode == "head":
             return self.forward_head(back_out)
         else:
             raise ValueError
-    def forward_backbone(self, template_list, search_list,anno_list,his_search,his_hp):
+    def forward_backbone(self, template_list, search_list,anno_list,his_chp_tokens):
         # Forward the backbone
-        xz,his_search,his_hp= self.backbone(template_list, search_list,anno_list,his_search,his_hp)
+        xz,his_chp_tokens= self.backbone(template_list, search_list,anno_list,his_chp_tokens)
         xz = self.backbone.norm_(xz)
-        return xz,his_search,his_hp
+        return xz,his_chp_tokens
     def forward_head(self, back_out, gt_score_map=None):
         lens_z=self.num_patch_z
         lens_x=self.num_patch_x

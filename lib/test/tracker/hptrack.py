@@ -28,8 +28,7 @@ class HPTRACK(BaseTracker):
         self.num_template = self.cfg.TEST.NUM_TEMPLATES
         self.debug = params.debug
         self.frame_id = 0
-        self.his_search = [None]*self.cfg.MODEL.BACKBONE.NUM_LAYERS
-        self.his_hp=[None]*self.cfg.MODEL.BACKBONE.NUM_LAYERS
+        self.his_chp_tokens=[None]*self.cfg.MODEL.BACKBONE.NUM_MFHP_LAYERS
 
         # online update settings
         DATASET_NAME = dataset_name.upper()
@@ -92,9 +91,8 @@ class HPTRACK(BaseTracker):
         anno_list=self.anno.copy()
         # run the backbone
         with torch.no_grad():
-            his_search = self.his_search
-            his_hp=self.his_hp
-            back_out,his_search,his_hp = self.network.forward_backbone(template_list,search_list,anno_list,his_search,his_hp)
+            his_chp_tokens=self.his_chp_tokens
+            back_out,his_chp_tokens = self.network.forward_backbone(template_list,search_list,anno_list,his_chp_tokens)
         # run the head
         with torch.no_grad():
             out_dict = self.network.forward_head(back_out=back_out,)
@@ -121,10 +119,11 @@ class HPTRACK(BaseTracker):
         pred_box = (pred_boxes.mean(dim=0) * self.params.search_size / resize_factor).tolist()  # (cx, cy, w, h) [0,1]
         # get the final box result
         self.state = clip_box(self.map_box_back(pred_box, resize_factor), H, W, margin=10)
-        #为历史信息更新做了条件，因为不是每一张搜索图像的信息都值得存储
+        #为历史信息更新做了条件，不是每一张搜索图像的信息都值得存储
         #conf = out_dict['confidence'].item()
         conf=conf_score.item()
-        self.his_hp = his_hp
+        self.his_chp_tokens = his_chp_tokens
+        #template injection process
         if self.num_template > 1 and conf > self.update_threshold  :
             z_patch_arr, resize_factor = sample_target(image, self.state,self.params.template_factor,
                                                        output_sz=self.params.template_size)
@@ -138,27 +137,24 @@ class HPTRACK(BaseTracker):
                 min_score, min_template, min_anno = min(self.memorys, key=lambda x: x[0])
                 self.memorys.remove((min_score, min_template,min_anno))#删除一张分数最小的
                 self.memorys.pop(0)
+            #template extraction process
             if self.frame_id % self.update_intervals == 0 and  len(self.memorys)>=self.num_template-1:
                 self.select_memory_frames()  # 基于分数最优的模板图像跟新方式
                 ##self.select_memory_frames2()  # 基于中心点的模板图像跟新方式
 
         # for debug
-        '''if self.debug == 2:
-            x1, y1, w, h = self.state
-            image_BGR = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            cv2.rectangle(image_BGR, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), color=(0, 0, 255), thickness=2)
-            save_path = os.path.join(self.save_path, "%04d.jpg" % self.frame_id)
-            cv2.imwrite(save_path, image_BGR)'''
         if self.debug == 1:
-            #print(conf_score.item())
-            #print(conf)
-            #print('\n')
             x1, y1, w, h = self.state
             image_BGR = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             cv2.rectangle(image_BGR, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), color=(0, 0, 255), thickness=2)
             cv2.imshow('vis', image_BGR)
             cv2.waitKey(1)
-
+        elif self.debug == 2:
+            x1, y1, w, h = self.state
+            image_BGR = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            cv2.rectangle(image_BGR, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), color=(0, 0, 255), thickness=2)
+            save_path = os.path.join(self.save_path, "%04d.jpg" % self.frame_id)
+            cv2.imwrite(save_path, image_BGR)
         return {"target_bbox": self.state,
                 "best_score": conf}
     #基于分数最优的模板图像跟新方式

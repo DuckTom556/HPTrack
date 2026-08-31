@@ -389,7 +389,7 @@ class VisionMamba(nn.Module):
 
 
 @register_model
-def build_vim(pretrained=False,embed_dim=None, **kwargs):
+def build_chpu(pretrained=False,embed_dim=None, **kwargs):
     model = VisionMamba(
         patch_size=16, embed_dim=embed_dim, depth=1, rms_norm=True, residual_in_fp32=True, fused_add_norm=True,
         final_pool_type='mean', if_abs_pos_embed=True, if_rope=False, if_rope_residual=False, bimamba_type="v2",

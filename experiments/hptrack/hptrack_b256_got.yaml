@@ -37,13 +37,13 @@ MODEL:
     GRAD_CKPT: True
     MULTIPLIER: 0.1
     TOKEN_TYPE_INDICATE : True #用于目标掩码
-    USE_CONF: False  #用于置信度头
+    USE_CONF: False  #without using
     USE_POOL: False
-    USE_MAMBA_S: True #用于模板图像特征聚合
-    USE_HP: True #用于多级特征历史提示
-    USE_MAMBA_T: True #用于多级特征历史提示 [[10,15],[15,20],[20,25],[25,30]] [[10,18],[18,24],[24,30]]
-    LAYER_INDEXES: [[10,18],[18,24],[24,30]]   #[[10,30]] #  #[[10,20],[20,30]] #[[10,14],[14,18],[18,22],[22,26],[26,30]] #[[10,20],[20,30]]#[10,30] #[[10,14]]
-    NUM_LAYERS: 3
+    USE_HTFA: True #用于模板图像特征聚合
+    USE_MFHP: True #用于多级特征历史提示
+    USE_CHPU: True #For CHP token updating
+    LAYER_INDEXES: [[10,18],[18,24],[24,30]]
+    NUM_MFHP_LAYERS: 3
     D_STATE:  16
   HEAD:
     TYPE: CENTER

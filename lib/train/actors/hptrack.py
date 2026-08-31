@@ -36,12 +36,11 @@ class HPTrackActor(BaseActor):
         template_list = data['template_images'].view(-1, *data['template_images'].shape[2:]).split(b,dim=0)
         anno_list = data['template_anno'].view(-1, *data['template_anno'].shape[2:]).split(b, dim=0)
         out_list = []
-        his_search =[None]*self.cfg.MODEL.BACKBONE.NUM_LAYERS
-        his_hp=[None]*self.cfg.MODEL.BACKBONE.NUM_LAYERS
+        his_chp_tokens=[None]*self.cfg.MODEL.BACKBONE.NUM_MFHP_LAYERS
         for i in range(len(search_list)):
             search_i_list = [search_list[i]]
-            back_out,his_search,his_hp = self.net(template_list=template_list, search_list=search_i_list,
-                               anno_list=anno_list,his_search=his_search,his_hp=his_hp,mode='backbone') # forward the encoder
+            back_out,his_chp_tokens = self.net(template_list=template_list, search_list=search_i_list,
+                               anno_list=anno_list,his_chp_tokens=his_chp_tokens,mode='backbone') # forward the encoder
             outputs = self.net(back_out=back_out, mode="head")
             out_dict = outputs
             out_list.append(out_dict)

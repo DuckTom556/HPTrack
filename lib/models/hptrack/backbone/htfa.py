@@ -91,11 +91,11 @@ class RMSNorm(nn.Module):
         output = x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + self.eps) * self.weight
         return output
 
-class SSM(nn.Module):
+class Mamba(nn.Module):
     def __init__(self, d_model=512, d_inner=1024, bias=False, dt_rank=32, d_state=16, d_conv=3,dt_min=0.001,
                  dt_max=0.1, dt_init='random', dt_scale=1.0, conv_bias=True, dt_init_floor=0.0001,grad_ckpt=False):
         super().__init__()
-        self.ssm = ResidualBlock(dt_scale,d_model,d_inner,dt_rank,d_state,bias,d_conv,conv_bias,
+        self.mamba = ResidualBlock(dt_scale,d_model,d_inner,dt_rank,d_state,bias,d_conv,conv_bias,
                                  dt_init,dt_max,dt_min,dt_init_floor,grad_ckpt)
     def forward(self, z):
         num=z.shape[1]
@@ -103,12 +103,12 @@ class SSM(nn.Module):
         z0=z[:,0,:,:]
         for i in range(num):
             z_his=z[:,i,:,:]
-            z_his,his=self.ssm(z_his,his)
+            z_his,his=self.mamba(z_his,his)
         z=torch.cat([z0,z_his],dim=1)
         return z
 
-def build_ssm(d_model,d_state,grad_ckpt):
-    neck = SSM(d_model=d_model,
+def build_htfa(d_model,d_state,grad_ckpt):
+    neck = Mamba(d_model=d_model,
                 d_inner=2*d_model,
                 dt_rank=d_model//16,
                 d_state=d_state,

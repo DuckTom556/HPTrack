@@ -1,8 +1,8 @@
 from functools import partial
 import torch
 import torch.nn as nn
-from lib.models.hptrack.backbone.vim import build_vim
-from lib.models.hptrack.backbone.ssm import build_ssm
+from lib.models.hptrack.backbone.chpu import build_chpu
+from lib.models.hptrack.backbone.htfa import build_htfa
 
 class BaseBackbone(nn.Module):
     def __init__(self):
@@ -19,15 +19,15 @@ class BaseBackbone(nn.Module):
         self.template_foreground_token = None
         self.search_token = None
         self.token_type_indicate = False
-        self.mamba_t = None
-        self.mamba_s = None
-        self.use_mamba_t = False
-        self.use_mamba_s = False
+        self.HTFA = None
+        self.CHPU = None
+        self.use_chpu = False
+        self.use_htfa = False
         self.layer_indexes = []
         self.use_conf = False
-        self.num_layers = None
-        self.hp_token = None
-        self.use_hp = False
+        self.mfhp_layers = None
+        self.chp_tokens = None
+        self.use_mfhp = False
         self.cls_pos_embed=None
         self.hp_pos_embed = None
         self.use_interaction = False
@@ -37,20 +37,20 @@ class BaseBackbone(nn.Module):
         template_size = cfg.DATA.TEMPLATE.SIZE
         new_patch_size = cfg.MODEL.BACKBONE.STRIDE
         self.layer_indexes = cfg.MODEL.BACKBONE.LAYER_INDEXES
-        self.num_layers = cfg.MODEL.BACKBONE.NUM_LAYERS
-        self.use_mamba_t = cfg.MODEL.BACKBONE.USE_MAMBA_T
-        self.use_mamba_s = cfg.MODEL.BACKBONE.USE_MAMBA_S
+        self.mfhp_layers = cfg.MODEL.BACKBONE.NUM_MFHP_LAYERS
+        self.use_chpu = cfg.MODEL.BACKBONE.USE_CHPU
+        self.use_htfa = cfg.MODEL.BACKBONE.USE_HTFA
         self.use_conf = cfg.MODEL.BACKBONE.USE_CONF
-        self.use_hp = cfg.MODEL.BACKBONE.USE_HP
+        self.use_mfhp = cfg.MODEL.BACKBONE.USE_MFHP
         self.return_inter = cfg.MODEL.BACKBONE.RETURN_INTER
         self.token_type_indicate = cfg.MODEL.BACKBONE.TOKEN_TYPE_INDICATE
-        if self.use_mamba_t:
-            self.mamba_t = nn.ModuleList([build_vim(embed_dim=self.embed_dim) for _ in range(self.num_layers)])
-        if self.use_mamba_s:
-            self.mamba_s=build_ssm(d_model=self.embed_dim,d_state=cfg.MODEL.BACKBONE.D_STATE,grad_ckpt=self.grad_ckpt)
-        if self.use_hp:
-            '''self.hp_token=nn.Parameter(torch.zeros(1, 1, self.embed_dim))'''
-            self.hp_token = nn.ParameterList([nn.Parameter(torch.zeros(1, 1, self.embed_dim)) for _ in range(self.num_layers)])
+        if self.use_htfa:
+            self.HTFA=build_htfa(d_model=self.embed_dim,d_state=cfg.MODEL.BACKBONE.D_STATE,grad_ckpt=self.grad_ckpt)
+        if self.use_chpu:
+            self.CHPU = nn.ModuleList([build_chpu(embed_dim=self.embed_dim) for _ in range(self.mfhp_layers)])
+
+        if self.use_mfhp:
+            self.chp_tokens = nn.ParameterList([nn.Parameter(torch.zeros(1, 1, self.embed_dim)) for _ in range(self.mfhp_layers)])
         self.num_patches_search = (search_size// new_patch_size) * (search_size// new_patch_size)
         self.num_patches_template = (template_size// new_patch_size) * (template_size// new_patch_size)
         if self.token_type_indicate:
@@ -121,7 +121,7 @@ class BaseBackbone(nn.Module):
         for idx, blk in enumerate(blocks):  # backbone block
             x,att =blk(x)
         return x
-    def forward_features(self, template_list, search_list, template_anno_list,his_search,his_hp):
+    def forward_features(self, template_list, search_list, template_anno_list,his_chp_tokens):
         num_template = len(template_list)
         z = torch.stack(template_list, dim=1)  # (b,n,c,h,w)
         z = z.view(-1, *z.size()[2:])  # (bn,c,h,w)
@@ -147,44 +147,37 @@ class BaseBackbone(nn.Module):
 
         z = z.view(-1, num_template, z.size(-2), z.size(-1))  # b,n,l,c
         # HTFA process
-        if self.use_mamba_s:
-            z=self.mamba_s(z)  # b,l,c
+        if self.use_htfa:
+            z=self.HTFA(z)  # b,l,c
         else:
             z = z.reshape(z.size(0), -1, z.size(-1))  # b,l,c
         x = x.reshape(x.size(0), -1, x.size(-1))
         zx = torch.cat([z, x], dim=1)
-        #if self.use_conf and self.cls_token is not None:
+        #---------- without using
         if self.cls_token is not None and self.use_conf:
             B = zx.shape[0]
             cls_tokens = self.cls_token.expand(B, -1, -1)
             cls_tokens+=self.cls_pos_embed
-            #cls_tokens = cls_tokens if his_hp[0] is None else his_hp[0] + cls_tokens
             zx = torch.cat([cls_tokens, zx], dim=1)
-        if self.hp_token is not None:
-            '''B = zx.shape[0]
-            hp_tokens = self.hp_token.expand(B, -1, -1)
-            hp_tokens =hp_tokens+ self.hp_pos_embed
-            #hp_tokens=hp_tokens if his_hp[1] is  None else hp_tokens+his_hp[1]'''
-            #zx = torch.cat([zx, hp_tokens], dim=1)
-            hp_tokens=[]
+        #----------
+        if self.chp_tokens is not None:
+            CHP_Tokens=[]
             B = zx.shape[0]
-            for i in range(len(self.hp_token)):
-                hp_token= self.hp_token[i].expand(B, -1, -1)
-                hp_token= hp_token if his_hp[i] is None else his_hp[i] + hp_token
-                hp_tokens.append(hp_token)
+            for i in range(len(self.chp_tokens)):
+                chp_token= self.chp_tokens[i].expand(B, -1, -1)
+                CHPT= chp_token if his_chp_tokens[i] is None else his_chp_tokens[i] + chp_token
+                CHP_Tokens.append(CHPT)#CHPT 1,CHPT 2,...,CHPT n
         zx = self.pos_drop(zx)
-        # MFHP process
-        for i, index in enumerate(self.layer_indexes):
-            if self.use_hp :
-                zx=torch.cat([zx,hp_tokens[i]], dim=1)
-            zx=self.my_layer(zx,self.blocks[index[0]:index[1]])
-            if self.use_mamba_t:
-                zx, his_hp[i] = self.mamba_t[i](zx, self.num_patches_search, 1)#his_hp[i]
-            elif self.use_hp:
-                his_hp[i]=zx[:,-1:,:]
-                zx=zx[:,:-1,:]
-        return zx,his_search,his_hp
+        if self.use_mfhp:
+            for i, index in enumerate(self.layer_indexes):
+                zx=torch.cat([zx,CHP_Tokens[i]], dim=1)
+                zx=self.my_layer(zx,self.blocks[index[0]:index[1]])
+                zx, his_chp_tokens[i] = self.CHPU[i](zx, self.num_patches_search, 1)
+        else:
+            for blk in self.blocks[-self.num_main_blocks:]:
+                zx, att = blk(x)
+        return zx,his_chp_tokens
 
-    def forward(self, template_list,search_list,template_anno_list,his_search,his_hp):
-        zx,his_search,his_hp = self.forward_features(template_list,search_list,template_anno_list,his_search,his_hp)
-        return zx,his_search,his_hp
+    def forward(self, template_list,search_list,template_anno_list,his_chp_tokens):
+        zx,his_chp_tokens = self.forward_features(template_list,search_list,template_anno_list,his_chp_tokens)
+        return zx,his_chp_tokens
