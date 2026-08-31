@@ -4,14 +4,14 @@ def local_env_settings():
     settings = EnvSettings()
 
     # Set your local paths here.
-    settings.davis_dir = '/root/autodl-tmp/LAST/dd'
-    settings.result_plot_path = '/root/autodl-tmp/LAST/dd'
-    settings.results_path = '/root/autodl-tmp/LAST/dd'    # Where to store tracking results56
-    settings.segmentation_path = '/root/autodl-tmp/LAST/dd'
-    settings.network_path = '/root/autodl-tmp/LAST/HPTrack'  # Where tracking networks are stored.
-    settings.prj_dir = '/root/autodl-tmp/LAST/HPTrack'
-    settings.save_dir = '/root/autodl-tmp/LAST/HPTrack'
-    settings.got10k_path = '/root/autodl-tmp/DATA/GOT10K/test'
+    settings.davis_dir = ''
+    settings.result_plot_path = '/'
+    settings.results_path = ''    # Where to store tracking results
+    settings.segmentation_path = ''
+    settings.network_path = ''  # Where tracking networks are stored.
+    settings.prj_dir = ''
+    settings.save_dir = ''
+    settings.got10k_path = ''
     settings.got_packed_results_path = ''
     settings.got_reports_path = ''
     settings.lasot_path = ''

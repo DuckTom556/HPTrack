@@ -38,7 +38,7 @@ def main():
     #tracker_name：跟踪器名称，对应'/media/ducktom/DATA/SOT/Ubuntu/SeqT/SeqTrack/lib/test/tracker/seqtrack.py'文件
     parser.add_argument('--tracker_name', type=str, default='hptrack',help='Name of tracking method.')
     #tracker_param：跟踪器模型参数名称，对应/media/ducktom/DATA/SOT/Ubuntu/SeqT/SeqTrack/experiments/seqtrack/seqtrack_b256_got.yaml配置文件
-    parser.add_argument('--tracker_param', type=str, default='hptrack_b256',help='Name of config file.')
+    parser.add_argument('--tracker_param', type=str, default='hptrack_b256_got',help='Name of config file.')
     parser.add_argument('--runid', type=int, default=None, help='The run id.')
     parser.add_argument('--dataset_name', type=str, default='got10k_test', help='Name of dataset (otb, nfs, uav, got10k_test, lasot, trackingnet, lasot_extension_subset, tnl2k).')
     #用第sequence个视频序列进行测试，None表示用所有序列进行测试
