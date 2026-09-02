@@ -23,4 +23,3 @@ class EnvironmentSettings:
         self.msra10k_dir = ''
         self.davis_dir = ''
         self.youtubevos_dir = ''
-#/media/ducktom/DATA/SOT/MODEL/O/MCITrack4
