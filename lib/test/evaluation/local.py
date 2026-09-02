@@ -28,5 +28,3 @@ def local_env_settings():
 
     settings.youtubevos_dir = ''
     return settings
-
-#/media/ducktom/DATA/SOT/MODEL/O/MCITrack2
