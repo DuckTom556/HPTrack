@@ -9,7 +9,7 @@ DATA:
     FACTOR: 4.0
     SCALE_JITTER: 0.5
     SIZE: 256
-    NUMBER: 1
+    NUMBER: 2
   STD:
   - 0.229
   - 0.224
@@ -19,7 +19,7 @@ DATA:
     FACTOR: 2.0
     SCALE_JITTER: 0
     SIZE: 128
-    NUMBER: 1
+    NUMBER: 3
   TRAIN:
     DATASETS_NAME:
     - GOT10K_train_full
