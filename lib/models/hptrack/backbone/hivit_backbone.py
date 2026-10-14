@@ -23,7 +23,7 @@ class BaseBackbone(nn.Module):
         self.CHPU = None
         self.use_chpu = False
         self.use_htfa = False
-        self.use_cwa =False
+        self.use_mfa =False
         self.layer_indexes = []
         self.use_conf = False
         self.mfhp_layers = None
@@ -41,7 +41,7 @@ class BaseBackbone(nn.Module):
         self.mfhp_layers = cfg.MODEL.BACKBONE.NUM_MFHP_LAYERS
         self.use_chpu = cfg.MODEL.BACKBONE.USE_CHPU
         self.use_htfa = cfg.MODEL.BACKBONE.USE_HTFA
-        self.use_cwa = cfg.MODEL.BACKBONE.USE_CWA
+        self.use_mfa = cfg.MODEL.BACKBONE.USE_MFA
         self.use_conf = cfg.MODEL.BACKBONE.USE_CONF
         self.use_mfhp = cfg.MODEL.BACKBONE.USE_MFHP
         self.return_inter = cfg.MODEL.BACKBONE.RETURN_INTER
@@ -150,7 +150,7 @@ class BaseBackbone(nn.Module):
         # HTFA process
         if self.use_htfa:
             z=self.HTFA(z)  # b,l,c
-        elif self.use_cwa:
+        elif self.use_mfa:
             z0 = z[:, 0, :, :]
             z_cwa = z.mean(dim=1)
             z = torch.cat([z0, z_cwa], dim=1)

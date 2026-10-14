@@ -46,7 +46,7 @@ MODEL:
     USE_CONF: False
     USE_POOL: False
     USE_HTFA: True
-    USE_CWA:  False
+    USE_MFA: False
     USE_MFHP: True
     USE_CHPU: True
     LAYER_INDEXES: [[10,18],[18,24],[24,30]]
