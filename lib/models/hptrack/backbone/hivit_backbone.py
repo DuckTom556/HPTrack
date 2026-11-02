@@ -180,8 +180,8 @@ class BaseBackbone(nn.Module):
                 if self.use_chpu:
                     zx, his_chp_tokens[i] = self.CHPU[i](zx, self.num_patches_search, 1)
                 else:
-                    zx=zx[:,:-1,:]
                     his_chp_tokens[i]=zx[:,-1:,:]
+                    zx=zx[:,:-1,:]
         else:
             for blk in self.blocks[-self.num_main_blocks:]:
                 zx, att = blk(zx)
